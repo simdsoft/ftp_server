@@ -17,11 +17,11 @@ int main(int argc, char** argv)
     return EINVAL;
   }
 
-  cxx17::string_view wwwroot = argv[1];
+  std::string_view wwwroot = argv[1];
   if (!fsutils::is_dir_exists(wwwroot))
     return ENOENT;
 
-  cxx17::string_view wanip;
+  std::string_view wanip;
   if (argc >= 3)
   {
     wanip = argv[2];

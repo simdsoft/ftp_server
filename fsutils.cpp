@@ -3,21 +3,21 @@
 
 namespace fsutils
 {
-bool is_dir_exists(cxx17::string_view path)
+bool is_dir_exists(std::string_view path)
 {
   posix_stat_st st;
   if (0 == posix_stat(path.data(), &st))
     return !!(st.st_mode & S_IFDIR);
   return false;
 }
-bool is_file_exists(cxx17::string_view path)
+bool is_file_exists(std::string_view path)
 {
   posix_stat_st st;
   if (0 == posix_stat(path.data(), &st))
     return !!(st.st_mode & S_IFREG);
   return false;
 }
-long long get_file_size(cxx17::string_view path, bool& isdir)
+long long get_file_size(std::string_view path, bool& isdir)
 {
   posix_stat_st st;
   if (0 == posix_stat(path.data(), &st))
@@ -30,8 +30,8 @@ long long get_file_size(cxx17::string_view path, bool& isdir)
 }
 #if defined(_WIN32) && !defined(__MINGW64__) && !defined(__MINGW32__)
 static bool is_dir_exists_wide(const wchar_t* path);
-bool is_dir_exists(cxx17::wstring_view path) { return is_dir_exists_wide(path.data()); }
-bool is_file_exists(cxx17::wstring_view path)
+bool is_dir_exists(std::wstring_view path) { return is_dir_exists_wide(path.data()); }
+bool is_file_exists(std::wstring_view path)
 {
   posix_stat_st st;
   if (0 == posix_ustat(path.data(), &st))
@@ -61,7 +61,7 @@ static void list_files_wide(const wchar_t* dirPath,
           // Error getting file
           break;
         }
-        cxx17::wstring_view fileName = file.name;
+        std::wstring_view fileName = file.name;
         if (fileName != L"." && fileName != L"..")
         {
           callback(file);

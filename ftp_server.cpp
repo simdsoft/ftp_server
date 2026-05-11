@@ -6,10 +6,10 @@
 
 long long g_stats_hits = 0;
 
-ftp_server::ftp_server(cxx17::string_view root, cxx17::string_view wanip)
+ftp_server::ftp_server(std::string_view root, std::string_view wanip)
 {
   ftp_session::register_handlers_once();
-  cxx17::assign(root_, root);
+  root_ = root;
 
   if (!wanip.empty())
   {
@@ -22,7 +22,7 @@ ftp_server::ftp_server(cxx17::string_view root, cxx17::string_view wanip)
     }
   }
   else
-    cxx17::assign(wanip_, wanip);
+    wanip_ = wanip;
 
   fstats_ = fopen((root_ + "/stats.txt").c_str(), "wb");
 }

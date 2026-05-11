@@ -6,7 +6,7 @@ class ftp_server
   friend class ftp_session;
 
 public:
-  ftp_server(cxx17::string_view root, cxx17::string_view wanip = "");
+  ftp_server(std::string_view root, std::string_view wanip = "");
   ~ftp_server();
   void run(int max_clients = 10, u_short port = 21);
 

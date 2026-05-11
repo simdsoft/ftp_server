@@ -12,9 +12,9 @@ using namespace std;
 #  define _mksv(a) a ""sv
 #else
 template <size_t size>
-inline cxx17::string_view _mksv(const char (&strLiteral)[size])
+inline std::string_view _mksv(const char (&strLiteral)[size])
 {
-  return cxx17::string_view(strLiteral, size - 1);
+  return std::string_view(strLiteral, size - 1);
 }
 #  define u8
 #endif
@@ -39,7 +39,9 @@ public:
   }
 
 public:
-  transmit_session(const std::string& filename, std::function<int(yasio::sbyte_buffer, io_completion_cb_t)> send_cb, std::function<void()> complete_cb)
+  transmit_session(const std::string& filename,
+                   std::function<int(tlx::sbyte_buffer, io_completion_cb_t)> send_cb,
+                   std::function<void()> complete_cb)
       : send_cb_(std::move(send_cb)), complete_cb_(std::move(complete_cb))
   {
     this->fp_ = posix_fopen(filename, "rb");
@@ -61,7 +63,8 @@ public:
     { // reply stats to client if open file failed
       int n     = sprintf(buffer_, "The commands processed totals=%lld", g_stats_hits);
       auto self = shared_from_this();
-      send_cb_(yasio::sbyte_buffer(buffer_, buffer_ + n), [self](int, size_t) { self->complete_cb_(); });
+      send_cb_(tlx::sbyte_buffer(buffer_, buffer_ + n),
+               [self](int, size_t) { self->complete_cb_(); });
     }
   }
 
@@ -71,7 +74,7 @@ public:
     if (n > 0)
     {
       auto self = shared_from_this();
-      if (send_cb_(yasio::sbyte_buffer(buffer_, buffer_ + n), std::bind(&transmit_session::handle_write, self)) < 0)
+      if (send_cb_(tlx::sbyte_buffer(buffer_, buffer_ + n), std::bind(&transmit_session::handle_write, self)) < 0)
       {
         complete_cb_();
       }
@@ -82,7 +85,7 @@ public:
     }
   }
 
-  std::function<int(yasio::sbyte_buffer, io_completion_cb_t)> send_cb_;
+  std::function<int(tlx::sbyte_buffer, io_completion_cb_t)> send_cb_;
   std::function<void()> complete_cb_;
 
   FILE* fp_ = nullptr;
@@ -124,12 +127,12 @@ inline void fast_split_of(_CStr s, size_t slen, const typename std::remove_point
   }
 }
 template <typename _Elem, typename _Fn>
-inline void fast_split_of(cxx17::basic_string_view<_Elem> s, const _Elem* delims, _Fn func)
+inline void fast_split_of(std::basic_string_view<_Elem> s, const _Elem* delims, _Fn func)
 {
   return fast_split_of(s.data(), s.length(), delims, func);
 }
 } // namespace nzls
-static bool verify_path(cxx17::string_view path, bool isdir)
+static bool verify_path(std::string_view path, bool isdir)
 { // verify path to disallow access out of wwwroot on local filesystem
   int total = isdir ? 0 : -1;
   int upcnt = 0;
@@ -227,22 +230,22 @@ timer_cb_t ftp_session::create_timer_cb()
 
 void ftp_session::handle_packet(yasio::io_packet& packet)
 {
-  cxx17::string_view algsv(packet.data(), packet.size());
+  std::string_view algsv(packet.data(), packet.size());
   size_t crlf;
-  while ((crlf = algsv.find_last_of("\r\n")) != cxx17::string_view::npos)
+  while ((crlf = algsv.find_last_of("\r\n")) != std::string_view::npos)
     algsv.remove_suffix(1);
 
   std::string cmd, param;
   auto offset = algsv.find_first_of(' ');
-  if (offset != cxx17::string_view::npos)
+  if (offset != std::string_view::npos)
   {
-    cxx17::assign(cmd, algsv.substr(0, offset));
+    cmd = algsv.substr(0, offset);
     offset = algsv.find_first_not_of(' ', offset + 1);
-    if (offset != cxx17::string_view::npos)
-      cxx17::assign(param, algsv.substr(offset));
+    if (offset != std::string_view::npos)
+      param = algsv.substr(offset);
   }
   else
-    cxx17::assign(cmd, algsv);
+    cmd = algsv;
 
   cmd.resize(sizeof(ftp_cmd_id_t));
 
@@ -452,7 +455,7 @@ void ftp_session::do_transmit()
       transferring_ = true;
       transmit_session::start_transmit(
           this->fspath_,
-          [=](yasio::sbyte_buffer buffer, std::function<void(int, size_t)> handler) {
+          [=](tlx::sbyte_buffer buffer, std::function<void(int, size_t)> handler) {
             return __service->write(this->thandle_transfer_, std::move(buffer), std::move(handler));
           },
           [=]() {
@@ -471,7 +474,7 @@ void ftp_session::do_transmit()
   }
 }
 
-void ftp_session::stock_reply(cxx17::string_view code, cxx17::string_view resp_data, bool finished, bool ispath)
+void ftp_session::stock_reply(std::string_view code, std::string_view resp_data, bool finished, bool ispath)
 {
   if (!this->thandle_ctl_)
     return;
