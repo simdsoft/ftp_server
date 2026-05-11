@@ -1,6 +1,7 @@
 #pragma once
 #include "tinydir/tinydir.h"
 #include <functional>
+#include <string>
 #include <string_view>
 #include <sys/stat.h>
 #if defined(_WIN32) && !defined(__MINGW64__) && !defined(__MINGW32__)
