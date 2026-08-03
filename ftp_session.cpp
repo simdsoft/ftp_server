@@ -1,4 +1,4 @@
-﻿#include "ftp_session.hpp"
+#include "ftp_session.hpp"
 #include "ftp_server.hpp"
 
 #include <sys/types.h>
@@ -40,7 +40,7 @@ public:
 
 public:
   transmit_session(const std::string& filename,
-                   std::function<int(tlx::sbyte_buffer, io_completion_cb_t)> send_cb,
+                   std::function<int(tlx::byte_buffer, io_completion_cb_t)> send_cb,
                    std::function<void()> complete_cb)
       : send_cb_(std::move(send_cb)), complete_cb_(std::move(complete_cb))
   {
@@ -63,7 +63,7 @@ public:
     { // reply stats to client if open file failed
       int n     = sprintf(buffer_, "The commands processed totals=%lld", g_stats_hits);
       auto self = shared_from_this();
-      send_cb_(tlx::sbyte_buffer(buffer_, buffer_ + n),
+      send_cb_(tlx::byte_buffer((unsigned char*)buffer_, (unsigned char*)buffer_ + n),
                [self](int, size_t) { self->complete_cb_(); });
     }
   }
@@ -74,7 +74,7 @@ public:
     if (n > 0)
     {
       auto self = shared_from_this();
-      if (send_cb_(tlx::sbyte_buffer(buffer_, buffer_ + n), std::bind(&transmit_session::handle_write, self)) < 0)
+      if (send_cb_(tlx::byte_buffer((unsigned char*)buffer_, (unsigned char*)buffer_ + n), std::bind(&transmit_session::handle_write, self)) < 0)
       {
         complete_cb_();
       }
@@ -85,7 +85,7 @@ public:
     }
   }
 
-  std::function<int(tlx::sbyte_buffer, io_completion_cb_t)> send_cb_;
+  std::function<int(tlx::byte_buffer, io_completion_cb_t)> send_cb_;
   std::function<void()> complete_cb_;
 
   FILE* fp_ = nullptr;
@@ -230,7 +230,7 @@ timer_cb_t ftp_session::create_timer_cb()
 
 void ftp_session::handle_packet(yasio::io_packet& packet)
 {
-  std::string_view algsv(packet.data(), packet.size());
+  std::string_view algsv(packet.as_chars().data(), packet.size());
   size_t crlf;
   while ((crlf = algsv.find_last_of("\r\n")) != std::string_view::npos)
     algsv.remove_suffix(1);
@@ -455,7 +455,7 @@ void ftp_session::do_transmit()
       transferring_ = true;
       transmit_session::start_transmit(
           this->fspath_,
-          [=](tlx::sbyte_buffer buffer, std::function<void(int, size_t)> handler) {
+          [=](tlx::byte_buffer buffer, std::function<void(int, size_t)> handler) {
             return __service->write(this->thandle_transfer_, std::move(buffer), std::move(handler));
           },
           [=]() {
